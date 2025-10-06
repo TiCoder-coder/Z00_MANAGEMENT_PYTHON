@@ -1,0 +1,5 @@
+django==4.2.5  # Django framework
+djongo==1.3.6  # Backend cho Django de ket noi voi MongoDB
+pymongo==4.3.3  # Driver MongoDB cho Python
+djangorestframework==3.14.0  # Dung de call API
+python-dotenv==0.21.0  # Bien moi truong cho venv
