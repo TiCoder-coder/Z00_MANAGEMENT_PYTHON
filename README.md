@@ -3,7 +3,7 @@
 
 --- TAI LIEU THAM KHAO DE VIET CODE TUAN THEO CAC CLASS, FUNC, .... TRONG DU AN: https://github.com/TiCoder-coder/OOP_TS.git ----
 ----------------------------------- VIET THEM FUNC GI KHAC THI PHAI CHU THICH CHUC NANG VA GIAI THICH----------------------------------------
-
+- PROJECT SU DUNG THU VIEN DJANGO, SQL LÀ NOSQL (MONGODB), VIET API VA TEST (AI SU DUNG TOOLS HAY COMPILERS NAO DE CODE THI TUY)
 
 - Chuc nang cac file: 
     /ZOO_MANAGEMENT_PYTHON/ZOO_MANAGEMENT/zoo_app/enums.py                          ---- chua cac enums cua du an
