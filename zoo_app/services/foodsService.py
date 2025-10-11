@@ -6,72 +6,122 @@ from zoo_app.serializers.updateFoodDto import UpdateFoodDto
 class foodService:
     # Tạo mới loại thức ăn
     def createFood(self, dto: CreateFoodDto):
-        # Kiểm tra idFood đã tồn tại trong database chưa.
-        existed = Foods.object.filter(idFood=dto.idFood).first()
-        if existed:
-            raise ValueError(f"Food with id {dto.idFood} already exists")
+        # Thêm try/except
+        try:
+            # Kiểm tra idFood đã tồn tại.
+            if Foods.objects.filter(idFood=dto.idFood).exists():
+                return {
+                    "status": "error",
+                    "message": f"Food with id {dto.idFood} already exists"
+                }
+            # Tạo object mới và lưu vào database
+            new_food = Foods(
+                idFood=dto.idFood,
+                nameFood=dto.nameFood,
+                typeFood=dto.typeFood,
+                caloriesPerUnit=dto.caloriesPerUnit
+            )
+            new_food.save()
 
-        # Nếu chưa tồn tại tại object mới và lưu vào database
-        new_food = Foods(
-            idFood=dto.idFood,
-            nameFood=dto.nameFood,
-            typeFood=dto.typeFood,
-            caloriesPerUnit=dto.caloriesPerUnit
-        )
-        new_food.save()  # Lưu object vào mongodb
-
-        # Trả về dữ liệu vừa tạo
-        return {
-            "idFood": dto.idFood,
-            "nameFood": dto.nameFood,
-            "typeFood": dto.typeFood,
-            "caloriesPerUnit": dto.caloriesPerUnit
-        }
+            # Trả về dữ liệu vừa tạo.
+            return {
+                "status": "success",
+                "message": "Food created successfully",
+                "data": {
+                    "idFood": new_food.idFood,
+                    "nameFood": new_food.nameFood,
+                    "typeFood": new_food.typeFood,
+                    "caloriesPerUnit": new_food.caloriesPerUnit
+                }
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": str(e)
+            }
 
     def reviewFood(self):
-        # Xuất thông tin tất cả thức ăn.
-        foods = Foods.object.all()  # Lây toàn bộ document trong collection foods
-        # Nếu không có dữ liệu trả về mảng rỗng
-        if not foods:
-            return []
-        # Trả về danh sách dict
-        result = []
-        for food in foods:
-            result.append(food.to_dict())
-        return result
+        # Thêm try/except
+        try:
+            foods = Foods.objects.all()
+            data = []
+            for f in foods:
+                data.append({
+                    "idFood": f.idFood,
+                    "nameFood": f.nameFood,
+                    "typeFood": f.typeFood,
+                    "caloriesPerUnit": f.caloriesPerUnit
+                })
+
+            # Trả về danh sách
+            return {
+                "status": "success",
+                "message": "Food list retrieved successfully",
+                "data": data
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": str(e)
+            }
 
     def updateFood(self, idFood: str, dto: UpdateFoodDto):
-        # Dùng để cập nhật thông tin (chỉ manager mới được phép)
-        # Kiểm tra idFood có tồn tại không.
-        food = Foods.object.filter(idFood=idFood).first()
-        if not food:
-            return None
-        # Cập nhật từng filed nếu dto tồn tại
-        if dto.nameFood:
-            food.nameFood = dto.nameFood
-        if dto.typeFood:
-            food.typeFood = dto.typeFood
-        if dto.caloriesPerUnit:
-            food.caloriesPerUnit = dto.carloriesPerUnit
+        # Thêm try/except
+        try:
+            food = Foods.objects.filter(idFood=idFood).first()
+            if not food:
+                return {
+                    "status": "error",
+                    "message": f"Food with id {idFood} not found"
+                }
 
-        # Lưu thay đổi.
-        food.save()
+            # Cập nhật từng filed nếu có giá trị.
+            if dto.nameFood is not None:
+                food.nameFood = dto.nameFood
+            if dto.typeFood is not None:
+                food.typeFood = dto.typeFood
+            if dto.caloriesPerUnit is not None:
+                food.caloriesPerUnit = dto.caloriesPerUnit
 
-        # Trả vê thông tin sau khi cập nhật.
-        return {
-            "idFood": idFood,
-            "nameFood": food.nameFood,
-            "typeFood": food.typeFood,
-            "caloriesPerUnit": food.caloriesPerUnit
-        }
+            food.save()
+
+            # Trả về dict
+            return {
+                "status": "success",
+                "message": "Food updated successfully",
+                "data": {
+                    "idFood": food.idFood,
+                    "nameFood": food.nameFood,
+                    "typeFood": food.typeFood,
+                    "caloriesPerUnit": food.caloriesPerUnit
+                }
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": str(e)
+            }
 
     def deleteFood(self, idFood: str):
-        # Dùng để xóa 1 loại thức ăn (chỉ manager được phép)
-        # Kiểm tra idFood có tồn tại không.
+        # Thêm try/except
+        try:
+            # Kiểm tra idFood có tồn tại không.
+            food = Foods.objects.filter(idFood=idFood).first()
+            if not food:
+                return {
+                    "status": "error",
+                    "message": f"Food with id {idFood} not found"
+                }
 
-        food = Foods.object.filter(idFood=idFood).first()
-        if not food:
-            return False
+            food.delete()
 
-        food.delete()
-        return True
+            # Trả về thông tin xóa thành công.
+            return {
+                "status": "success",
+                "message": f"Food with id {idFood} deleted successfully"
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": str(e)
+            }
