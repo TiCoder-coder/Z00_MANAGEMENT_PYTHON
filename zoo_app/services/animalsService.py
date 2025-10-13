@@ -7,14 +7,11 @@ from django.core.exceptions import ObjectDoesNotExist
 
 
 class animalService:
-    # Tạo động vật mới.
+    # Hàm tạo animal.
     def createAnimals(self, dto: CreateAnimalDto):
-        # Input: dto (CreateAnimalDto)
-
-        # Thêm try/except tránh vỡ API.
+        # Kiểm tra enclosure có tồn tại không.
         try:
             enclosure = Enclosures.objects.get(idEnclosure=dto.enclosureId)
-            # Kiểm tra trùng id animal
             if Animals.objects.filter(id=dto.id).exists():
                 return {
                     "status": "error",
@@ -32,10 +29,8 @@ class animalService:
                 createAt=timezone.now(),
                 updateAt=timezone.now()
             )
-            # Lưu vào database.
-            animal.save()
 
-            # Sửa lại đoạn này return toàn bộ thông tin.
+            animal.save()  # Lưu trữ vào database.
             return {
                 "status": "success",
                 "data": {
@@ -47,7 +42,6 @@ class animalService:
                     "weight": animal.weight,
                     "healthStatus": animal.healthStatus,
                     "enclosureId": animal.enclosureId,
-                    # Chuyển dữ liệu sang str để phù hợp trong json.
                     "createAt": str(animal.createAt),
                     "updateAt": str(animal.updateAt)
                 }
@@ -58,15 +52,14 @@ class animalService:
                 "message": f"Enclosure with id {dto.enclosureId} not found"
             }
         except Exception as e:
-            # Luôn trẻ về json khi có lỗi.
             return {
                 "status": "error",
                 "message": str(e)
             }
 
-    # Lấy danh sách animal
+    # Hàm lấy tất cả danh sách animal
     def reviewAnimals(self):
-        # Sửa đoạn này thêm try/except
+        # Kiểm tra báo lỗi nếu có và trả về danh sách animal vào database.
         try:
             animals = Animals.objects.all()
             data = []
@@ -94,10 +87,11 @@ class animalService:
                 "message": str(e)
             }
 
+    # Hàm thêm thông tin animal vào database.
     def updateAnimals(self, id: str, dto: UpdateAnimalDto):
+        # Kiểm tra animal có tồn tại không.
         try:
             animal = Animals.objects.get(id=id)
-            # Kiểm tra enclosure có tồn tại không.
             if dto.enclosureId and not Enclosures.objects.filter(idEnclosure=dto.enclosureId).exists():
                 return {
                     "status": "error",
@@ -122,7 +116,7 @@ class animalService:
             animal.updateAt = timezone.now()
             animal.save()
 
-            # return toàn bộ thông tin sau khi update
+            # Trả về thông tin sau khi update.
             return {
                 "status": "success",
                 "data": {
@@ -147,15 +141,15 @@ class animalService:
         except Exception as e:
             return {
                 "status": "error",
-                "message": str(e)  # Thông báo lỗi trong json.
+                "message": str(e)
             }
 
+    # Hàm xóa animal trong database.
     def deleteAnimals(self, id: str):
+        # Kiểm tra animal có tồn tại không.
         try:
             animal = Animals.objects.get(id=id)
-            animal.delete()
-
-            # Thêm return trả về thông tin khi xóa thành công.
+            animal.delete()  # Xóa animal.
             return {
                 "status": "success",
                 "message": f"Animal with id {id} delete successfully",
