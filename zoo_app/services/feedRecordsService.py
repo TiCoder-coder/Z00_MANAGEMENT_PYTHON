@@ -4,13 +4,10 @@ from zoo_app.serializers.updateFeedRecordDto import UpdateFeedRecordDto
 
 
 class feedRecordsService:
-    # Lớp này dùng xử lí toàn bộ cho bảng feedrecords
-
-    # Tạo mới FeedRecord
+    # Hàm tạo feedrecord.
     def createFeedrecord(self, dto: CreateFeedRecordDto):
-        # Thêm try/except
+        # Kiểm tra feedrecord đã tồn tại chưa.
         try:
-            # Kiểm tra có trùng idFeedRecord.
             existed = FeedRecord.objects.filter(
                 idFeedRecord=dto.idFeedRecord).first()
             if existed:
@@ -18,14 +15,12 @@ class feedRecordsService:
                     "status": "error",
                     "message": f"FeedRecord with id {dto.idFeedRecord} already exists"
                 }
-            # kiểm tra food có tồn tại không.
             food_exists = Food.objects.filter(idFood=dto.idFood).first()
             if not food_exists:
                 return {
                     "status": "error",
                     "message": f"FoodID {dto.idFood} in feed record not found"
                 }
-            # Kiểm tra animal có tồn tại.
             animal_exists = Animals.objects.filter(
                 id=dto.animalIdFeedRecord).first()
             if not animal_exists:
@@ -41,8 +36,7 @@ class feedRecordsService:
                 quantity=dto.quantity,
                 feedAt=dto.feedAt
             )
-
-            new_record.save()
+            new_record.save()  # Lưa vào database.
 
             return {
                 "status": "success",
@@ -60,14 +54,15 @@ class feedRecordsService:
                 "status": "error",
                 "message": str(e)
             }
+    # Hàm trả về danh sách feedrecord.
 
     def reviewFeedrecord(self):
-        # kiểm tra try/except
+        # Kiểm tra danh sách feedrecord đã tồn tại chưa và trả về danh sách feedrecord.
         try:
             records = FeedRecord.objects.all()
             if not records:
                 return {
-                    "status": "success",  # API hoạt động bình thường.
+                    "status": "success",
                     "message": "No feed records found",
                     "hasData": False,
                     "data": [],
@@ -90,9 +85,10 @@ class feedRecordsService:
                 "status": "error",
                 "message": str(e)
             }
+    # Hàm cập nhật thông tin cho feedrecord.
 
     def updateFeedRecord(self, idFeedRecord: str, dto: UpdateFeedRecordDto):
-        # Thêm try/excpet
+        # Kiểm tra feedrecord đã tồn tại chưa và cập nhật.
         try:
             record = FeedRecord.objects.filter(
                 idFeedRecord=idFeedRecord).first()
@@ -101,8 +97,6 @@ class feedRecordsService:
                     "status": "error",
                     "message": f"FeedRecord with id {idFeedRecord} not found"
                 }
-
-            # Kiểm tra foodId
             if dto.foodId:
                 food_exists = Food.objects.filter(idFood=dto.foodId).first()
                 if not food_exists:
@@ -111,8 +105,6 @@ class feedRecordsService:
                         "message": f"FoodId {dto.foodId} not found"
                     }
                 record.foodId = dto.foodId
-
-            # Kiểm tra animalId.
             if dto.animalIdFeedRecord:
                 animal_exists = Animals.objects.filter(
                     id=dto.animalIdFeedRecord).first()
@@ -122,8 +114,6 @@ class feedRecordsService:
                         "message": f"AnimalId {dto.animalIdFeedRecord} not found"
                     }
                 record.animalIdFeedRecord = dto.animalIdFeedRecord
-
-            # Cập nhật quantity và feedAt
             if dto.quantity is not None:
                 record.quantity = dto.quantity
             if dto.feedAt is not None:
@@ -147,9 +137,10 @@ class feedRecordsService:
                 "status": "error",
                 "message": str(e)
             }
+    # Hàm xóa feedrecord.
 
     def deleteFeedRecord(self, idFeedRecord: str):
-        # Thêm try/except
+        # Kiểm tra feedrecord cần xóa có tồn tại chưa.
         try:
             record = FeedRecord.objects.filter(
                 idFeedRecord=idFeedRecord).first()
@@ -158,7 +149,7 @@ class feedRecordsService:
                     "status": "error",
                     "message": f"FeedRecord with id {idFeedRecord} not found"
                 }
-            record.delete()
+            record.delete()  # Xóa feedrecord.
             return {
                 "status": "success",
                 "message": f"FeedRecord with id {idFeedRecord} delete successfully"
