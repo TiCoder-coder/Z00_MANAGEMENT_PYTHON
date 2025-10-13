@@ -4,26 +4,22 @@ from zoo_app.serializers.updateFoodDto import UpdateFoodDto
 
 
 class foodService:
-    # Tạo mới loại thức ăn
+    # Hàm tạo food.
     def createFood(self, dto: CreateFoodDto):
-        # Thêm try/except
+        # Kiểm tra food đã tồn tại chưa và trả vế danh sách food.
         try:
-            # Kiểm tra idFood đã tồn tại.
             if Foods.objects.filter(idFood=dto.idFood).exists():
                 return {
                     "status": "error",
                     "message": f"Food with id {dto.idFood} already exists"
                 }
-            # Tạo object mới và lưu vào database
             new_food = Foods(
                 idFood=dto.idFood,
                 nameFood=dto.nameFood,
                 typeFood=dto.typeFood,
                 caloriesPerUnit=dto.caloriesPerUnit
             )
-            new_food.save()
-
-            # Trả về dữ liệu vừa tạo.
+            new_food.save()  # Lưu vào database.
             return {
                 "status": "success",
                 "message": "Food created successfully",
@@ -39,9 +35,10 @@ class foodService:
                 "status": "error",
                 "message": str(e)
             }
+    # Hàm trả về danh sách food.
 
     def reviewFood(self):
-        # Thêm try/except
+        # Kiểm tra danh sách food có tồn tại chưa và trả về kết quả.
         try:
             foods = Foods.objects.all()
             data = []
@@ -52,8 +49,6 @@ class foodService:
                     "typeFood": f.typeFood,
                     "caloriesPerUnit": f.caloriesPerUnit
                 })
-
-            # Trả về danh sách
             return {
                 "status": "success",
                 "message": "Food list retrieved successfully",
@@ -64,9 +59,10 @@ class foodService:
                 "status": "error",
                 "message": str(e)
             }
+    # Hàm cập nhật thông tin food.
 
     def updateFood(self, idFood: str, dto: UpdateFoodDto):
-        # Thêm try/except
+        # Kiểm tra food cần cập nhật đã tồn tại và trả về kết quả.
         try:
             food = Foods.objects.filter(idFood=idFood).first()
             if not food:
@@ -74,8 +70,6 @@ class foodService:
                     "status": "error",
                     "message": f"Food with id {idFood} not found"
                 }
-
-            # Cập nhật từng filed nếu có giá trị.
             if dto.nameFood is not None:
                 food.nameFood = dto.nameFood
             if dto.typeFood is not None:
@@ -83,9 +77,7 @@ class foodService:
             if dto.caloriesPerUnit is not None:
                 food.caloriesPerUnit = dto.caloriesPerUnit
 
-            food.save()
-
-            # Trả về dict
+            food.save()  # Lưu vào database.
             return {
                 "status": "success",
                 "message": "Food updated successfully",
@@ -101,11 +93,11 @@ class foodService:
                 "status": "error",
                 "message": str(e)
             }
+    # Hàm xóa food.
 
     def deleteFood(self, idFood: str):
-        # Thêm try/except
+        # Kiểm tra giá trị food cần xóa đã tồn tại chưa.
         try:
-            # Kiểm tra idFood có tồn tại không.
             food = Foods.objects.filter(idFood=idFood).first()
             if not food:
                 return {
@@ -113,9 +105,7 @@ class foodService:
                     "message": f"Food with id {idFood} not found"
                 }
 
-            food.delete()
-
-            # Trả về thông tin xóa thành công.
+            food.delete()  # Xóa food.
             return {
                 "status": "success",
                 "message": f"Food with id {idFood} deleted successfully"
