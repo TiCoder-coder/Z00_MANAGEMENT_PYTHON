@@ -3,11 +3,12 @@ from django.core.exceptions import ObjectDoesNotExist
 from zoo_app.serializers.createEnclosureDto import CreateEnclosureDto
 from zoo_app.serializers.updateEnclosureDto import UpdateEnclosureDto
 
+# Hàm tạo chuồng mới.
+
 
 class enclosureService:
-    # Hàm tạo enclosure(chuồng) mới.
     def createEnclosure(self, dto: CreateEnclosureDto):
-        # Thêm try/except
+        # Kiểm tra enclosure đã được tạo chưa.
         try:
             existed = Enclosures.objects.filter(
                 idEnclosure=dto.idEnclosure).first()
@@ -25,8 +26,6 @@ class enclosureService:
                 capacity=dto.capacity
             )
             enclosure.save()  # Lưu vào database
-
-            # Thêm return toàn bộ thông tin.
             return {
                 "status": "success",
                 "data": {
@@ -37,15 +36,15 @@ class enclosureService:
                     "capacity": enclosure.capacity
                 }
             }
-
         except Exception as e:
             return {
                 "status": "error",
                 "message": str(e)
             }
+    # Hàm lấy danh sách enclosure.
 
     def reviewEnclosure(self):
-        # Thêm try/except
+        # Lấy danh sách enclosure và in ra lỗi nếu có.
         try:
             enclosures = Enclosures.objects.all()
             data = []
@@ -67,9 +66,10 @@ class enclosureService:
                 "status": "error",
                 "message": str(e)
             }
+    # Hàm cập nhật thông tin cho enclosure.
 
     def updateEnclosure(self, idEnclosure: str, dto: UpdateEnclosureDto):
-        # Thêm try/except
+        # Kiểm tra enclosure muốn update đã tồn tại chưa.
         try:
             enclosure = Enclosures.objects.filter(
                 idEnclosure=idEnclosure).first()
@@ -87,9 +87,7 @@ class enclosureService:
             if dto.capacity:
                 enclosure.capacity = dto.capacity
 
-            enclosure.save()
-
-            # return toàn bộ thông tin.
+            enclosure.save()  # Lưu thay đổi vào database.
             return {
                 "status": "success",
                 "data": {
@@ -105,8 +103,10 @@ class enclosureService:
                 "status": "error",
                 "message": str(e)
             }
+    # Hàm xóa enclosure.
 
     def deleteEnclosure(self, idEnclosure: str):
+        # Kiểm tra enclosure cần xóa có tồn tại chưa.
         try:
             enclosure = Enclosures.objects.filter(
                 idEnclosure=idEnclosure).first()
@@ -115,8 +115,6 @@ class enclosureService:
                     "status": "error",
                     "message": f"Enclosure with id {idEnclosure} not found"
                 }
-
-            # Lưu thông tin trả về sau khi del
             delete_inf = {
                 "deleteId": enclosure.idEnclosure,
                 "deleteName": enclosure.nameEnclosure,
@@ -125,9 +123,7 @@ class enclosureService:
                 "capacity": enclosure.capacity
             }
 
-            enclosure.delete()  # Lưu vào database
-
-            # Thêm return chi tiết sau khi xóa thành công.
+            enclosure.delete()  # Xóa enclosure.
             return {
                 "status": "success",
                 "message": f"Enclosure with id {idEnclosure} delete successfully",
