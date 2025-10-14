@@ -115,7 +115,7 @@ class CreateAnimalSerializer(serializers.ModelSerializer):
             return value
         value=self._validate_text_field(value, "Enclosure ID")
         try:
-            enclosure=Enclosure.objects.get(id=value)
+            enclosure=Enclosure.objects.get(idEnclosure=value)
             #Kiểm tra xem id chuồng có đang hoạt động không
             if hasattr(enclosure, 'isActive') and enclosure.isActive is False:
                 raise serializers.ValidationError("Enclosure is not active")
