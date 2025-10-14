@@ -14,7 +14,8 @@ class CreateAnimalSerializer(serializers.ModelSerializer):
                   'gender', 
                   'weight', 
                   'healthStatus', 
-                  'enclosureId', 
+                  'enclosureId',
+                 ]
         read_only_fields = ['createAt', 'updateAt']
         
     def _validate_text_field(self, value, field_name):
