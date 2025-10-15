@@ -2,6 +2,7 @@ from rest_framework import serializers
 from zoo_app.models.animalsModels import Animal
 from zoo_app.models.enclosuresModel import Enclosure
 from zoo_app.enums.enums import Gender, HealthStatus
+import re
 class CreateAnimalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Animal
@@ -26,6 +27,7 @@ class CreateAnimalSerializer(serializers.ModelSerializer):
     enclosureId = serializers.PrimaryKeyRelatedField(queryset=Enclosure.objects.all(), source='enclosure',required=True)
     createAt=serializers.DateTimeField(read_only=True)
     updateAt=serializers.DateField(read_only=True)
+        
     def validate(self, attrs):
         """
         Xác thực liên kết giữa các trường
@@ -81,3 +83,4 @@ class CreateAnimalSerializer(serializers.ModelSerializer):
                     )
         
         return attrs
+
