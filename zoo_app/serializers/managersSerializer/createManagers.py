@@ -11,11 +11,11 @@ class CreateManagersSerializers(serializers.ModelSerializer):
             'password',
             'role'
         ]
-    id=serializers.CharField(min_length=3, max_length=100, required=True, help_text="Administrator ID")
-    name=serializers.CharField(min_length=3, max_length=100, required=True, help_text="Administrator Name")
-    userName=serializers.CharField(min_length=3, max_length=100, required=True, help_text="Administrator login name")
-    password=serializers.CharField(min_length=3, max_length=255, required=True, write_only=True, help_text="Password")
-    role=serializers.ChoiceField(choices=Manager.choices(), required=True, help_text="Manager Role")
+    id=serializers.CharField(min_length=3, max_length=100, required=True, help_text="Mã định danh của người quản lý")
+    name=serializers.CharField(min_length=3, max_length=100, required=True, help_text="Tên người quản lý")
+    userName=serializers.CharField(min_length=3, max_length=100, required=True, help_text="Tên đăng nhập của người quản lý")
+    password=serializers.CharField(min_length=3, max_length=255, required=True, write_only=True, help_text="Mật khẩu")
+    role=serializers.ChoiceField(choices=Manager.choices(), required=True, help_text="Vai trò của người quản lý")
     # Kiểm tra trùng userName
     def validate_userName(self, value):
         if Manager.objects.filter(userName__iexact=value).exists():
