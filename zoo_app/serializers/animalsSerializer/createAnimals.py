@@ -2,8 +2,6 @@ from rest_framework import serializers
 from zoo_app.models.animalsModels import Animal
 from zoo_app.models.enclosuresModel import Enclosure
 from zoo_app.enums.enums import Gender, HealthStatus
-from django.db import transaction
-import re
 class CreateAnimalSerializer(serializers.ModelSerializer):
     class Meta:
         model = Animal
@@ -14,123 +12,20 @@ class CreateAnimalSerializer(serializers.ModelSerializer):
                   'gender', 
                   'weight', 
                   'healthStatus', 
-                  'enclosureId', 
-                  'createAt',
-                  'updateAt']
-        
-    def _validate_text_field(self, value, field_name):
-        #Kiểm tra xem giá trị có phải là str hay không
-        if not isinstance(value, str):
-            raise serializers.ValidationError(f"{field_name} must be a string")
-        #Kiểm tra xem giá trị có phải bị trống hay không
-        if not value or not value.strip(): 
-            raise serializers.ValidationError(f"{field_name} cannot be empty")
-        #Kiểm tra xem giá trị có số lượng kí tự nằm trong khoảng từ 3-100 không
-        if not 3 <= len(value) <= 100:
-            raise serializers.ValidationError(f"{field_name} length must be between 3 and 100")
-        #Kiểm tra xem giá trị có chỉ chứa chữ cái, số, dấu gạch ngang và dấu gạch dưới không
-        if not re.match(r'^[a-zA-Z0-9_\-\s]+$', value):
-            raise serializers.ValidationError(f"{field_name} can only contain letters, numbers, spaces, underscores, or hyphens")
-        return value.strip()
-
-    def validate_id(self, value):
-        """
-        Xác thực id động vật
-        """
-        return self._validate_text_field(value, "Animal ID")
-
-    def validate_name(self, value):
-        """
-        Xác thực tên động vật
-        """
-        return self._validate_text_field(value, "Animal name")
-
-    def validate_species(self, value):
-        """
-        Xác thực loài động vật
-        """
-        return self._validate_text_field(value, "Species")
-    def validate_age(self, value):
-        """
-        Xác thực tuổi động vật
-        """
-        if value is None:
-            raise serializers.ValidationError("Age cannot be null")
-        #Kiểm tra xem tuổi có phải là chữ số không
-        if not isinstance(value, (int, float)):
-            raise serializers.ValidationError("Animal age must be number")
-        #Kiểm tra xem tuổi có phải lớn hơn hoặc bằng 0 hay không
-        if not value>=0:
-            raise serializers.ValidationError("Animal age cannot negative")
-        #Kiểm tra xem tuổi có vượt quá 100 tuổi hay không
-        if value>100:
-            raise serializers.ValidationError("Animal age cannot exceed 100 years")
-        if isinstance(value, float) and len(str(value).split('.')[-1]) > 2:
-            raise serializers.ValidationError("Animal age cannot have more than 2 decimal places")
-        return value
-    def validate_gender(self, value):
-        """
-        Xác thực giới tính động vật
-        """
-        if value is None:
-            return value
-        #Kiểm tra xem giới tính có phải bị trống hay không
-        if not value or not value.strip(): 
-            raise serializers.ValidationError(f"Gender cannot be empty")
-        #Kiểm tra xem giới tính có trong enums hay không
-        gender_values=[g.value for g in Gender]
-        if value not in gender_values:
-            raise serializers.ValidationError(f"Invalid gender. Must be one of: {', '.join(gender_values)}")
-        return value.strip()
-    def validate_weight(self, value):
-        if value is None:
-            return value
-        #Kiểm tra xem cân nặng có phải là số hay không
-        if not isinstance(value, (int, float)):
-            raise serializers.ValidationError("Weight must be number")
-        #Kiểm tra xem cân nặng có trên 0 hay không
-        if value<0:
-            raise serializers.ValidationError("Weight cannot negative")
-        # Kiểm tra cân nặng động vật không vượt quá 10 tấn
-        if value > 10000: 
-            raise serializers.ValidationError("Weight cannot exceed 10000 kg")
-        # Kiểm tra cân nặng động vật không phải là số thập phân quá phức tạp
-        if isinstance(value, float) and len(str(value).split('.')[-1]) > 3:
-            raise serializers.ValidationError("Weight cannot have more than 3 decimal places")
-        return value
-    def validate_healthStatus(self, value):
-        if value is None:
-            return value
-        #Kiểm tra xem tình trạng sức khoẻ có phải bị trống hay không
-        if not value or not value.strip(): 
-            raise serializers.ValidationError(f"Health status cannot be empty")
-        #Kiểm tra xem tình trang sức khoẻ có trong enums hay không
-        healthStatus_value=[h.value for h in HealthStatus]
-        if value not in healthStatus_value:
-            raise serializers.ValidationError(f"Invalid health status. Must be one of: {', '.join(healthStatus_value)}")
-
-        return value.strip()
-    def validate_enclosureId(self, value):
-        if value is None:
-            return value
-        value=self._validate_text_field(value, "Enclosure ID")
-        try:
-            enclosure=Enclosure.objects.get(id=value)
-            #Kiểm tra xem id chuồng có đang hoạt động không
-            if hasattr(enclosure, 'isActive') and enclosure.isActive is False:
-                raise serializers.ValidationError("Enclosure is not active")
-            #Kiểm tra xem chuồng trại đã đầy hay chưa
-            if hasattr(enclosure, 'isFull') and enclosure.isFull is True:
-                raise serializers.ValidationError("Enclosure is full")
-            # Kiểm tra khí hậu phù hợp với loài động vật
-            if hasattr(self.instance, 'species') and hasattr(enclosure, 'climate'):
-                # Logic kiểm tra khí hậu phù hợp có thể được thêm vào đây
-                pass
-        except Enclosure.DoesNotExist:
-            raise serializers.ValidationError("Enclosure with this ID does not exist")
-        except Exception as e:
-            raise serializers.ValidationError(f"Error validating enclosure: {str(e)}")
-        return value.strip()
+                  'enclosureId',
+                  'createAt', 
+                  'updateAt'
+                ] 
+    id=serializers.CharField(min_length=3, max_length=100, required=True)   
+    name=serializers.CharField(min_length=3, max_length=100, required=True)
+    age=serializers.IntegerField(min_value=0, required=True)
+    species=serializers.CharField(min_length=3, max_length=100, required=True)
+    gender=serializers.ChoiceField(choices=Gender.choices(), required=True)
+    weight=serializers.FloatField(min_value=0, required=True)
+    healthStatus=serializers.ChoiceField(choices=HealthStatus.choices(), required=True)
+    enclosureId = serializers.PrimaryKeyRelatedField(queryset=Enclosure.objects.all(), source='enclosure',required=True)
+    createAt=serializers.DateTimeField(read_only=True)
+    updateAt=serializers.DateField(read_only=True)
     def validate(self, attrs):
         """
         Xác thực liên kết giữa các trường
@@ -186,30 +81,3 @@ class CreateAnimalSerializer(serializers.ModelSerializer):
                     )
         
         return attrs
-    def create(self, validated_data):
-        """
-        Tạo mới bản ghi Animal với kiểm tra chuồng và cập nhật trạng thái liên quan
-        """
-        if not validated_data:
-            raise serializers.ValidationError("Data cannot be null")
-
-        enclosure_id = validated_data.get('enclosureId')
-
-        with transaction.atomic():
-            # Tạo mới bản ghi Animal
-            animal = Animal.objects.create(**validated_data)
-
-            # Nếu có enclosure, cập nhật số lượng động vật
-            if enclosure_id:
-                from zoo_app.models import Enclosure
-                try:
-                    enclosure = Enclosure.objects.get(idEnclosure=enclosure_id)
-                    if hasattr(enclosure, 'updateOccupancy'):
-                        enclosure.updateOccupancy()
-                except Enclosure.DoesNotExist:
-                    raise serializers.ValidationError("Enclosure does not exist")
-
-            # Ghi log (nếu có logger)
-            # logger.info(f"Animal {animal.id} created in enclosure {enclosure_id}")
-
-        return animal
