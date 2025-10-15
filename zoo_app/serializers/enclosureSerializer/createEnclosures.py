@@ -11,11 +11,11 @@ class CreateEnclosuresSerializers(serializers.ModelSerializer):
             'climate',
             'capacity'
                 ]         
-    idEnclosure=serializers.CharField(min_length=3, max_length=100, required=True)
-    nameEnclosure=serializers.CharField(min_length=3, max_length=100, required=True)
-    areaSize=serializers.CharField(min_length=3, max_length=50, required=True)
-    climate=serializers.ChoiceField(choices=Climate.choices(), required=True)
-    capacity=serializers.FloatField(min_value=0, required=True)
+    idEnclosure=serializers.CharField(min_length=3, max_length=100, required=True, help_text="Mã chuồng trại, duy nhất trong hệ thống")
+    nameEnclosure=serializers.CharField(min_length=3, max_length=100, required=True, help_text="Tên chuồng trại")
+    areaSize=serializers.CharField(min_length=3, max_length=50, required=True, help_text="Diện tích chuồng")
+    climate=serializers.ChoiceField(choices=Climate.choices(), required=True, help_text="Khí hậu của chuồng")
+    capacity=serializers.FloatField(min_value=0, required=True, help_text="Sức chứa tối đa của chuồng")
     def validate_nameEnclosure(self, value):
         """
         Không cho phép trùng tên chuồng
