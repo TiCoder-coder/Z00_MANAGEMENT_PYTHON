@@ -12,8 +12,8 @@ class CreateFeedRecordsSerializer(serializers.ModelSerializer):
             'quantity',
             'feedAt'
         ]
-    idFeedRecord=serializers.CharField(min_length=3, max_length=100, required=True)
-    animalIdFeedRecord = serializers.PrimaryKeyRelatedField(queryset=Animal.objects.all(), required=True)
-    foodId = serializers.PrimaryKeyRelatedField(queryset=Food.objects.all(), required=True)
-    quantity=serializers.IntegerField(min_value=0, required=True)
-    feedAt=serializers.DateTimeField(read_only=True)
+    idFeedRecord=serializers.CharField(min_length=3, max_length=100, required=True, help_text="Mã bản ghi cho lần cho ăn")
+    animalIdFeedRecord = serializers.PrimaryKeyRelatedField(queryset=Animal.objects.all(), required=True, help_text="ID động vật được cho ăn")
+    foodId = serializers.PrimaryKeyRelatedField(queryset=Food.objects.all(), required=True, help_text="ID loại thức ăn được sử dụng")
+    quantity=serializers.IntegerField(min_value=0, required=True, help_text="Số lượng thức ăn")
+    feedAt=serializers.DateTimeField(read_only=True, help_text="Thời điểm cho ăn")
