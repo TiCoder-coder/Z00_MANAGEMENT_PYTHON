@@ -1,159 +1,95 @@
-from typing import Optional, Dict, Any, List
-from django.contrib.auth.hashers import make_password, check_password
-from zoo_app.models import Managers
-from zoo_app.serializers.createManagerDto import CreateManagerDto
-from zoo_app.serializers.updateManagerDto import UpdateManagerDto
+import logging
+from django.core.exceptions import ObjectDoesNotExist
+from zoo_app.models.managersModel import ManagerModel
+from rest_framework.exceptions import ValidationError
+
+logger = logging.getLogger(__name__)
 
 
-class managersService:
-    # Tạo manager mới (chỉ manager được thực hiện)
-    def createManager(self, dto: CreateManagerDto) -> Dict[str, Any]:
-        # Kiểm tra các giá trị trong manager đã tồn tại chưa.
+class ManagerService:
+    # Tạo mới manager
+    @staticmethod
+    def create_manager(validated_data):
         try:
-            existing_user = Managers.objects.filter(
-                userName=dto.userName).first()
-            if existing_user:
-                return {
-                    "status": "error",
-                    "message": f"The login name {dto.userName} already exists",
-                    "data": None
-                }
-            existing_id = Managers.objects.filter(id=dto.id).first()
-            if existing_id:
-                return {
-                    "status": "error",
-                    "message": f"Manager with id {dto.id} already exists",
-                    "data": None
-                }
-            # Mã hóa mật khẩu.
-            hashes_password = make_password(dto.password)
-            manager = Managers(
-                id=dto.id,
-                name=dto.name,
-                userName=dto.userName,
-                password=hashes_password,
-                role=dto.role
-            )
-
-            manager.save()  # Lưu vào database.
-            data = manager.to_dict()
-            if "password" in data:
-                data.pop("password")
-            if "userName" in data:
-                data.pop("userName")
-
+            manager = ManagerModel.objects.create(**validated_data)
+            logger.info(f"Create manager: {manager.full_name}")
             return {
-                "status": "success",
-                "message": "Manager created successfully",
-                "data": data
+                "id": str(manager.id),
+                "full_name": manager.full_name,
+                "role": manager.role,
+                "email": manager.email,
+                "create_at": manager.create_at
             }
         except Exception as e:
-            return {
-                "status": "error",
-                "message": f" Error creating manager: {str(e)}",
-                "data": None
-            }
-    # Hàm trả về danh sách manager.
+            logger.info(f"Error creating manager: {str(e)}")
+            raise ValidationError(f"Error creating manager: {str(e)}")
 
-    def reviewManager(self) -> Dict[str, Any]:
-        # Kiểm tra danh sách manager đã tồn tại chưa. Nếu chưa có thì báo lỗi.
+    # Lấy tất cả danh sách manager
+    @staticmethod
+    def review_list_manager():
         try:
-            managers = Managers.objects.all()
-            if not managers.exists():
-                return {
-                    "status": "error",
-                    "message": "There is no managers in the system",
-                    "data": []
-                }
-            result_list = []
+            managers = ManagerModel.objects.all()
+            result = []
             for m in managers:
-                inf = m.to_dict()
-                if "password" in inf:
-                    inf.pop("password")
-                if "userName" in inf:
-                    inf.pop("userName")
-
-                result_list.append(inf)
-            return {
-                "status": "success",
-                "message": "Get manager list successfully",
-                "data": result_list
-            }
-
+                result.append({
+                    "id": str(m.id),
+                    "full_name": m.full_name,
+                    "role": m.role,
+                    "email": m.email,
+                    "create_at": m.create_at
+                })
+            return result
         except Exception as e:
-            return {
-                "status": "error",
-                "message": f"Error when getting manager: {str(e)}",
-                "data": []
-            }
-    # Hàm cập nhật thông tin manager.
+            raise ValidationError(f"Error fetching managers: {str(e)}")
 
-    def updateManager(self, id: str, dto: UpdateManagerDto) -> Dict[str, Any]:
-        # Kiểm tra thông tin cập nhật đã tồn tại trong database chưa. Nếu chưa thì báo lỗi.
+    # Lấy danh sách manager bằng id
+    @staticmethod
+    def get_manager_by_id(idManager):
         try:
-            manager = Managers.objects.filter(id=id).first()
-            if manager is None:
-                return {
-                    "status": "error",
-                    "message": f"Manager with id {id} not found",
-                    "data": None
-                }
-            if dto.userName is not None:
-                if dto.userName != manager.userName:
-                    conflict_user = Managers.objects.filter(
-                        userName=dto.userName).exclude(id=id).first()
-                    if conflict_user is not None:
-                        return {
-                            "status": "error",
-                            "message": f"The login name {dto.userName} is already exists",
-                            "data": None
-                        }
-                    manager.userName = dto.userName
-            if dto.password is not None:
-                manager.password = make_password(dto.password)
-            if dto.name is not None:
-                manager.name = dto.name
-            if dto.role is not None:
-                manager.role = dto.role
-            manager.save()  # Lưa vào database.
-            data = manager.to_dict()
-            if "password" in data:
-                data.pop("password")
-            if "userName" in data:
-                data.pop("userName")
+            manage = ManagerModel.objects.get(id=idManager)
             return {
-                "status": "success",
-                "message": "Manager information updated successfully",
-                "data": data
+                "id": str(manage.id),
+                "full_name": manage.full_name,
+                "role": manage.role,
+                "email": manage.email,
+                "create_at": manage.create_at
             }
+        except ObjectDoesNotExist:
+            raise ValidationError(f"Manager with id {idManager} not found")
         except Exception as e:
-            return {
-                "status": "error",
-                "message": f"Error updating manager: {str(e)}",
-                "data": None
-            }
-    # Hàm xóa thông tin manager.
+            raise ValidationError(f"Error getting managewr: {str(e)}")
 
-    def deleteManager(self, id: str) -> Dict[str, Any]:
-        # Kiểm tra manager cần xóa đã tồn tại trong database chưa.
+    # Cập nhật thông tin manager
+    @staticmethod
+    def update_manager(idManager, validated_data):
         try:
-            manager = Managers.objects.filter(id=id).first()
-            if manager is None:
-                return {
-                    "status": "error",
-                    "message": f"Manager with id {id} not found",
-                    "data": None
-                }
-            manager.delete()  # Xóa manager.
+            manager = ManagerModel.objects.get(id=idManager)
+            for key, value in validated_data.items():
+                setattr(manager, key, value)
+            manager.save()
+            logger.info(f"Updated manager: {manager.full_name}")
             return {
-                "status": "success",
-                "message": "Manager deleted successfully",
-                "data": None
+                "id": str(manager.id),
+                "full_name": manager.full_name,
+                "role": manager.role,
+                "email": manager.email,
+                "updated_at": manager.updated_at
             }
-
+        except ObjectDoesNotExist:
+            raise ValidationError(f"Manager with id {idManager} not found")
         except Exception as e:
+            raise ValidationError(f"Error updating manager: {str(e)}")
+
+    # Xóa thông tin manager
+    @staticmethod
+    def delete_manager(idManager):
+        try:
+            manager = ManagerModel.objects.get(id=idManager)
+            manager.delete()
             return {
-                "status": "error",
-                "message": f"Error deleting manager: {str(e)}",
-                "data": None
+                "message": f"Deleted manager with id {idManager} successfully"
             }
+        except ObjectDoesNotExist:
+            raise ValidationError(f"Manager with id {idManager} not found")
+        except Exception as e:
+            raise ValidationError(f"Error deleting manager: {str(e)}")
