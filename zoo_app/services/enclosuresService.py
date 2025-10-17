@@ -1,137 +1,75 @@
-from zoo_app.models import Enclosures
+import logging
 from django.core.exceptions import ObjectDoesNotExist
-from zoo_app.serializers.createEnclosureDto import CreateEnclosureDto
-from zoo_app.serializers.updateEnclosureDto import UpdateEnclosureDto
+from rest_framework.exceptions import ValidationError
+from zoo_app.models.enclosuresModel import EnclosureModel
 
-# Hàm tạo chuồng mới.
+logger = logging.getLogger(__name__)
 
 
-class enclosureService:
-    def createEnclosure(self, dto: CreateEnclosureDto):
-        # Kiểm tra enclosure đã được tạo chưa.
+class EnclosureService:
+    # Tạo mới enclosure
+    @staticmethod
+    def create_enclosure(validated_data):
         try:
-            existed = Enclosures.objects.filter(
-                idEnclosure=dto.idEnclosure).first()
-            if existed:
-                return {
-                    "status": "error",
-                    "message": f"Enclosure with id {dto.idEnclosure} already exists"
-                }
-
-            enclosure = Enclosures(
-                idEnclosure=dto.idEnclosure,
-                nameEnclosure=dto.nameEnclosure,
-                areaSize=dto.areaSize,
-                climate=dto.climate,
-                capacity=dto.capacity
-            )
-            enclosure.save()  # Lưu vào database
-            return {
-                "status": "success",
-                "data": {
-                    "idEnclosure": enclosure.idEnclosure,
-                    "nameEnclosure": enclosure.nameEnclosure,
-                    "areaSize": enclosure.areaSize,
-                    "climate": enclosure.climate,
-                    "capacity": enclosure.capacity
-                }
-            }
+            enclosure = EnclosureModel.objects.create(**validated_data)
+            logger.info(f"Create enclosure: {enclosure.name}")
+            return enclosure
         except Exception as e:
-            return {
-                "status": "error",
-                "message": str(e)
-            }
-    # Hàm lấy danh sách enclosure.
+            logger.error(f"Error creating enclosure: {str(e)}")
+            raise ValidationError(f"Can not create enclosure: {str(e)}")
 
-    def reviewEnclosure(self):
-        # Lấy danh sách enclosure và in ra lỗi nếu có.
+    # Lấy danh sách enclosure
+    @staticmethod
+    def review_list_enclosure():
         try:
-            enclosures = Enclosures.objects.all()
-            data = []
-
-            for e in enclosures:
-                data.append({
-                    "idEnclosure": e.idEnclosure,
-                    "nameEnclosure": e.nameEnclosure,
-                    "areaSize": e.areaSize,
-                    "climate": e.climate,
-                    "capacity": e.capacity
-                })
-            return {
-                "status": "success",
-                "data": data
-            }
+            enclosures = EnclosureModel.objects.all()
+            logger.info("List all enclosure")
+            return enclosures
         except Exception as e:
-            return {
-                "status": "error",
-                "message": str(e)
-            }
-    # Hàm cập nhật thông tin cho enclosure.
+            logger.error(f"Error listing enclosures: {str(e)}")
+            raise ValidationError(f"Can not list enclosures: {str(e)}")
 
-    def updateEnclosure(self, idEnclosure: str, dto: UpdateEnclosureDto):
-        # Kiểm tra enclosure muốn update đã tồn tại chưa.
+    # Lấy enclosure theo id
+    @staticmethod
+    def get_enclosure_by_id(idEnclosure):
         try:
-            enclosure = Enclosures.objects.filter(
-                idEnclosure=idEnclosure).first()
-            if not enclosure:
-                return {
-                    "status": "error",
-                    "message": f"Enclosure with id {idEnclosure} not found"
-                }
-            if dto.nameEnclosure:
-                enclosure.nameEnclosure = dto.nameEnclosure
-            if dto.areaSize:
-                enclosure.areaSize = dto.areaSize
-            if dto.climate:
-                enclosure.climate = dto.climate
-            if dto.capacity:
-                enclosure.capacity = dto.capacity
-
-            enclosure.save()  # Lưu thay đổi vào database.
-            return {
-                "status": "success",
-                "data": {
-                    "idEnclosure": enclosure.idEnclosure,
-                    "nameEnclosure": enclosure.nameEnclosure,
-                    "areaSize": enclosure.areaSize,
-                    "climate": enclosure.climate,
-                    "capacity": enclosure.capacity
-                }
-            }
+            enclosure = EnclosureModel.objects.get(id=idEnclosure)
+            logger.info(f"Retrieved enclosure ID: {idEnclosure}")
+            return enclosure
+        except ObjectDoesNotExist:
+            logger.warning(f"Enclosure not found: {idEnclosure}")
+            raise ValidationError(f"Enclosure with ID {idEnclosure} not found")
         except Exception as e:
-            return {
-                "status": "error",
-                "message": str(e)
-            }
-    # Hàm xóa enclosure.
+            logger.error(f"Error retrieving enclosure: {str(e)}")
+            raise ValidationError(f"Can not get enclosure: {str(e)}")
 
-    def deleteEnclosure(self, idEnclosure: str):
-        # Kiểm tra enclosure cần xóa có tồn tại chưa.
+    # Cập nhật enclosure
+    @staticmethod
+    def update_enclosure(idEnclosure, validated_data):
         try:
-            enclosure = Enclosures.objects.filter(
-                idEnclosure=idEnclosure).first()
-            if not enclosure:
-                return {
-                    "status": "error",
-                    "message": f"Enclosure with id {idEnclosure} not found"
-                }
-            delete_inf = {
-                "deleteId": enclosure.idEnclosure,
-                "deleteName": enclosure.nameEnclosure,
-                "areaSize": enclosure.areaSize,
-                "climate": enclosure.climate,
-                "capacity": enclosure.capacity
-            }
-
-            enclosure.delete()  # Xóa enclosure.
-            return {
-                "status": "success",
-                "message": f"Enclosure with id {idEnclosure} delete successfully",
-                "data": delete_inf
-            }
-
+            enclosure = EnclosureModel.objects.get(id=idEnclosure)
+            for key, value in validated_data.items():
+                setattr(enclosure, key, value)
+            enclosure.save()
+            logger.info(f"Updated enclosure ID: {idEnclosure}")
+            return enclosure
+        except ObjectDoesNotExist:
+            logger.warning(f"Emclosure not found for update: {idEnclosure}")
+            raise ValidationError(f"Enclosure with ID {idEnclosure} not found")
         except Exception as e:
-            return {
-                "status": "error",
-                "message": str(e)
-            }
+            logger.error(f"Error updating enclosure: {str(e)}")
+            raise ValidationError(f"Can not update enclosure: {str(e)}")
+
+    # Xóa enclosure
+    @staticmethod
+    def delete_enclosure(idEnclosure):
+        try:
+            enclosure = EnclosureModel.objects.get(id=idEnclosure)
+            enclosure.delete()
+            logger.info(f"Deleted enclosure ID: {idEnclosure}")
+        except ObjectDoesNotExist:
+            logger.warning(f"Enclosure not found for delete: {idEnclosure}")
+            raise ValidationError(f"Enclosure with ID {idEnclosure} not found")
+        except Exception as e:
+            logger.error(f"Error deleting enclosure: {str(e)}")
+            raise ValidationError(f"Can not delete enclosure: {str(e)}")
