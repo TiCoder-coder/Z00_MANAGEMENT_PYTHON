@@ -1,161 +1,87 @@
-from zoo_app.models import FeedRecord, Food, Animals
-from zoo_app.serializers.createFeedRecordDto import CreateFeedRecordDto
-from zoo_app.serializers.updateFeedRecordDto import UpdateFeedRecordDto
+import logging
+from django.core.exceptions import ObjectDoesNotExist
+from rest_framework.exceptions import ValidationError
+from zoo_app.models.feedRecordsModel import FeedRecordModel
+from zoo_app.models.animalsModels import AnimalModel
+
+logger = logging.getLogger(__name__)
 
 
-class feedRecordsService:
-    # Hàm tạo feedrecord.
-    def createFeedrecord(self, dto: CreateFeedRecordDto):
-        # Kiểm tra feedrecord đã tồn tại chưa.
+class FeedRecordService:
+    # Tạo feedRecord
+    @staticmethod
+    def create_feed_record(validated_data):
         try:
-            existed = FeedRecord.objects.filter(
-                idFeedRecord=dto.idFeedRecord).first()
-            if existed:
-                return {
-                    "status": "error",
-                    "message": f"FeedRecord with id {dto.idFeedRecord} already exists"
-                }
-            food_exists = Food.objects.filter(idFood=dto.idFood).first()
-            if not food_exists:
-                return {
-                    "status": "error",
-                    "message": f"FoodID {dto.idFood} in feed record not found"
-                }
-            animal_exists = Animals.objects.filter(
-                id=dto.animalIdFeedRecord).first()
-            if not animal_exists:
-                return {
-                    "status": "error",
-                    "message": f"AnimalId {dto.animalIdFeedRecord} in feed record not found"
-                }
+            animal_id = validated_data.get("animal")
+            if not animal_id:
+                raise ValidationError("Animal ID is required")
 
-            new_record = FeedRecord(
-                idFeedRecord=dto.idFeedRecord,
-                animalIdFeedRecord=dto.animalIdFeedRecord,
-                foodId=dto.foodId,
-                quantity=dto.quantity,
-                feedAt=dto.feedAt
-            )
-            new_record.save()  # Lưa vào database.
-
-            return {
-                "status": "success",
-                "message": "FeedRecord created successfully",
-                "data": {
-                    "idFeedRecord": new_record.idFeedRecord,
-                    "animalIdFeedRecord": new_record.animalIdFeedRecord,
-                    "foodId": new_record.foodId,
-                    "quantity": new_record.quantity,
-                    "feedAt": new_record.feedAt
-                }
-            }
+            try:
+                animal = AnimalModel.objects.get(id=animal_id.id)
+            except ObjectDoesNotExist:
+                raise ValidationError(f"Animal with ID {animal_id} not found")
+            feed_record = FeedRecordModel.objects.create(**validated_data)
+            logger.info(f"Created feed record for animal: {animal.name}")
+            return feed_record
+        except ValidationError as ve:
+            logger.warning(f"Validation error creating feed record: {ve}")
+            raise ve
         except Exception as e:
-            return {
-                "status": "error",
-                "message": str(e)
-            }
-    # Hàm trả về danh sách feedrecord.
+            logger.error(f"Error creating feed record: {str(e)}")
+            raise ValidationError(f"Can not create feed record: {str(e)}")
 
-    def reviewFeedrecord(self):
-        # Kiểm tra danh sách feedrecord đã tồn tại chưa và trả về danh sách feedrecord.
+    # Lấy danh sách feedRecord cho animal
+    @staticmethod
+    def review_list_feed_record():
         try:
-            records = FeedRecord.objects.all()
-            if not records:
-                return {
-                    "status": "success",
-                    "message": "No feed records found",
-                    "hasData": False,
-                    "data": [],
-                }
-            data = []
-            for r in records:
-                data.append({
-                    "idFeedRecord": r.idFeedRecord,
-                    "animalIdFeedRecord": r.animalIdFeedRecord,
-                    "foodId": r.foodId,
-                    "quantity": r.quantity,
-                    "feedAt": r.feedAt
-                })
-            return {
-                "status": "success",
-                "data": data
-            }
+            records = FeedRecordService.objects.all()
+            logger.info("List all feed record")
+            return records
         except Exception as e:
-            return {
-                "status": "error",
-                "message": str(e)
-            }
-    # Hàm cập nhật thông tin cho feedrecord.
+            logger.error(f"Error listing feed records: {str(e)}")
+            raise ValidationError(f"Can not list feed records: {str(e)}")
+    # Lấy danh sách feedRecord theo id
 
-    def updateFeedRecord(self, idFeedRecord: str, dto: UpdateFeedRecordDto):
-        # Kiểm tra feedrecord đã tồn tại chưa và cập nhật.
+    @staticmethod
+    def get_feed_record_by_id(idRecord):
         try:
-            record = FeedRecord.objects.filter(
-                idFeedRecord=idFeedRecord).first()
-            if not record:
-                return {
-                    "status": "error",
-                    "message": f"FeedRecord with id {idFeedRecord} not found"
-                }
-            if dto.foodId:
-                food_exists = Food.objects.filter(idFood=dto.foodId).first()
-                if not food_exists:
-                    return {
-                        "status": "error",
-                        "message": f"FoodId {dto.foodId} not found"
-                    }
-                record.foodId = dto.foodId
-            if dto.animalIdFeedRecord:
-                animal_exists = Animals.objects.filter(
-                    id=dto.animalIdFeedRecord).first()
-                if not animal_exists:
-                    return {
-                        "status": "error",
-                        "message": f"AnimalId {dto.animalIdFeedRecord} not found"
-                    }
-                record.animalIdFeedRecord = dto.animalIdFeedRecord
-            if dto.quantity is not None:
-                record.quantity = dto.quantity
-            if dto.feedAt is not None:
-                record.feedAt = dto.feedAt
-
-            record.save()  # Lưu vào database.
-
-            return {
-                "status": "success",
-                "message": "FeedRecord updated successfully",
-                "data": {
-                    "idFeedRecord": record.idFeedRecord,
-                    "animalFeedRecord": record.animalFeedRecord,
-                    "foodId": record.foodId,
-                    "quantity": record.quantity,
-                    "feedAt": record.feedAt
-                }
-            }
+            record = FeedRecordModel.objects.get(id=idRecord)
+            logger.info(f"Retrieved feed record ID: {idRecord}")
+            return record
+        except ObjectDoesNotExist:
+            logger.warning(f"Feed record not found: {idRecord}")
+            raise ValidationError(f"Feed record with ID {idRecord} not found")
         except Exception as e:
-            return {
-                "status": "error",
-                "message": str(e)
-            }
-    # Hàm xóa feedrecord.
+            logger.error(f"Error retrieving feed record: {str(e)}")
+            raise ValidationError(f"Can not get feed record: {str(e)}")
 
-    def deleteFeedRecord(self, idFeedRecord: str):
-        # Kiểm tra feedrecord cần xóa có tồn tại chưa.
+    # Cập nhật feedRecod
+    @staticmethod
+    def update_feed_record(idRecord, validated_data):
         try:
-            record = FeedRecord.objects.filter(
-                idFeedRecord=idFeedRecord).first()
-            if not record:
-                return {
-                    "status": "error",
-                    "message": f"FeedRecord with id {idFeedRecord} not found"
-                }
-            record.delete()  # Xóa feedrecord.
-            return {
-                "status": "success",
-                "message": f"FeedRecord with id {idFeedRecord} delete successfully"
-            }
+            record = FeedRecordModel.objects.get(id=idRecord)
+            for key, value in validated_data.items():
+                setattr(record, key, value)
+            record.save()
+            logger.info(f"Updated feed record ID: {idRecord}")
+            return record
+        except ObjectDoesNotExist:
+            logger.warning(f"Feed record not found for update: {idRecord}")
+            raise ValidationError(f"Feed record with ID {idRecord} not found")
         except Exception as e:
-            return {
-                "status": "erros",
-                "message": str(e)
-            }
+            logger.error(f"Error updating feed record: {str(e)}")
+            raise ValidationError(f"Can not update feed record: {str(e)}")
+
+    # Xóa feedRecord
+    @staticmethod
+    def delete_feed_record(idRecord):
+        try:
+            record = FeedRecordModel.objects.get(id=idRecord)
+            record.delete()
+            logger.info(f"Delete feed record ID: {idRecord}")
+        except ObjectDoesNotExist:
+            logger.warning(f"Feed record not found for delete: {idRecord}")
+            raise ValidationError(f"Feed record with ID {idRecord} not found")
+        except Exception as e:
+            logger.error(f"Error deleting feed record: {str(e)}")
+            raise ValidationError(f"Can not delete feed record: {str(e)}")
